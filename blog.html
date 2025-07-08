@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - Norivane</title>
+    <meta name="description" content="Discover insights, tips, and stories from the Norivane team. Stay updated with our latest thoughts on business, technology, and innovation.">
+    
+    <!-- Norivane Brand Colors and Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --deep-blue: #0A2342;
+            --sharp-teal: #00B2A9;
+            --very-dark-grey: #212529;
+            --medium-grey: #6c757d;
+            --light-grey-text: #8b9bb4;
+            --white: #FFFFFF;
+            --light-grey: #f8f9fa;
+            --border-grey: #e9ecef;
+            --shadow-light: 0 2px 8px rgba(10, 35, 66, 0.08);
+            --shadow-medium: 0 8px 32px rgba(10, 35, 66, 0.12);
+            --gradient-primary: linear-gradient(135deg, var(--sharp-teal) 0%, #00d4c7 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.6;
+            color: var(--very-dark-grey);
+            background-color: var(--light-grey);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Header */
+        .blog-header {
+            background: white;
+            padding: 4rem 0;
+            text-align: center;
+            border-bottom: 1px solid var(--border-grey);
+        }
+
+        .blog-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--deep-blue);
+            margin-bottom: 1rem;
+        }
+
+        .blog-subtitle {
+            font-size: 1.25rem;
+            color: var(--light-grey-text);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Navigation */
+        .blog-nav {
+            background: white;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-grey);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--sharp-teal);
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s ease;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .search-input {
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-grey);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            width: 300px;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--sharp-teal);
+        }
+
+        /* Main Content */
+        .blog-main {
+            padding: 3rem 0;
+        }
+
+        .loading-state,
+        .error-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-grey);
+            border-top-color: var(--sharp-teal);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .post-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .post-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .post-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .post-content {
+            padding: 1.5rem;
+        }
+
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: var(--light-grey-text);
+        }
+
+        .post-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--deep-blue);
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .post-excerpt {
+            color: var(--medium-grey);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .tag {
+            background: rgba(0, 178, 169, 0.1);
+            color: var(--sharp-teal);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-light);
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--light-grey);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: var(--light-grey-text);
+            font-size: 2rem;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--deep-blue);
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-description {
+            color: var(--light-grey-text);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .blog-title {
+                font-size: 2rem;
+            }
+
+            .search-box {
+                display: none;
+            }
+
+            .posts-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="blog-header">
+        <div class="container">
+            <h1 class="blog-title">Norivane Blog</h1>
+            <p class="blog-subtitle">Insights, stories, and updates from our team</p>
+        </div>
+    </header>
+
+    <nav class="blog-nav">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/" class="back-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m12 19-7-7 7-7"/>
+                        <path d="m19 12H5"/>
+                    </svg>
+                    Back to Norivane
+                </a>
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search articles...">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="blog-main">
+        <div class="container">
+            <div id="loadingState" class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Loading articles...</p>
+            </div>
+
+            <div id="errorState" class="error-state" style="display: none;">
+                <h2>Unable to load articles</h2>
+                <p>Please try again later.</p>
+            </div>
+
+            <div id="postsContainer" class="posts-grid" style="display: none;"></div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">📝</div>
+                <h2 class="empty-title">No articles found</h2>
+                <p class="empty-description">Check back soon for new content!</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let allPosts = [];
+        let filteredPosts = [];
+
+        async function loadPosts() {
+            try {
+                const response = await fetch('/api/blog/posts');
+                const data = await response.json();
+                
+                if (data.posts) {
+                    allPosts = data.posts;
+                    filteredPosts = allPosts;
+                    displayPosts();
+                } else {
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                showErrorState();
+            }
+        }
+
+        function displayPosts() {
+            const container = document.getElementById('postsContainer');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'none';
+            
+            if (filteredPosts.length === 0) {
+                showEmptyState();
+                return;
+            }
+            
+            container.innerHTML = filteredPosts.map(post => `
+                <article class="post-card" onclick="openPost('${post.slug}')">
+                    ${post.featured_image ? `<img src="${post.featured_image}" alt="${post.title}" class="post-image">` : ''}
+                    <div class="post-content">
+                        <div class="post-meta">
+                            <span>${formatDate(post.published_at)}</span>
+                            <span>•</span>
+                            <span>${Math.ceil(post.content.length / 1000)} min read</span>
+                        </div>
+                        <h2 class="post-title">${post.title}</h2>
+                        <p class="post-excerpt">${post.excerpt}</p>
+                        ${post.tags && post.tags.length > 0 ? `
+                            <div class="post-tags">
+                                ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </article>
+            `).join('');
+            
+            container.style.display = 'grid';
+        }
+
+        function showEmptyState() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('postsContainer').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+        }
+
+        function showErrorState() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('postsContainer').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function openPost(slug) {
+            window.location.href = `/blog/${slug}`;
+        }
+
+        function searchPosts(query) {
+            if (!query.trim()) {
+                filteredPosts = allPosts;
+            } else {
+                const searchTerm = query.toLowerCase();
+                filteredPosts = allPosts.filter(post => 
+                    post.title.toLowerCase().includes(searchTerm) ||
+                    post.excerpt.toLowerCase().includes(searchTerm) ||
+                    post.content.toLowerCase().includes(searchTerm) ||
+                    (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+                );
+            }
+            displayPosts();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPosts();
+            
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchPosts(e.target.value);
+                }, 300);
+            });
+        });
+    </script>
+</body>
+</html>
