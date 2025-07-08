@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Save, Eye, Image, Tag, Calendar, Globe } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -16,9 +16,53 @@ export function NewPost() {
   const [metaDescription, setMetaDescription] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [previewMode, setPreviewMode] = useState(false)
+  const [dbStatus, setDbStatus] = useState<string>('checking...')
   
   const { user } = useAuth()
   const navigate = useNavigate()
+
+  // Check database connection and table structure on component mount
+  useEffect(() => {
+    const checkDatabase = async () => {
+      try {
+        console.log('Checking database connection...')
+        
+        // Test basic connection
+        const { data: connectionTest, error: connectionError } = await supabase
+          .from('posts')
+          .select('count')
+          .limit(1)
+
+        if (connectionError) {
+          console.error('Database connection error:', connectionError)
+          setDbStatus(`Connection failed: ${connectionError.message}`)
+          return
+        }
+
+        console.log('Database connection successful')
+        
+        // Check table structure
+        const { data: tableInfo, error: tableError } = await supabase
+          .rpc('get_table_info', { table_name: 'posts' })
+          .single()
+
+        if (tableError) {
+          console.log('Could not get table info (this is normal):', tableError.message)
+        } else {
+          console.log('Table structure:', tableInfo)
+        }
+
+        setDbStatus('Connected')
+      } catch (error: any) {
+        console.error('Database check failed:', error)
+        setDbStatus(`Error: ${error.message}`)
+      }
+    }
+
+    if (user) {
+      checkDatabase()
+    }
+  }, [user])
 
   const generateSlug = (title: string) => {
     return title
@@ -36,35 +80,142 @@ export function NewPost() {
     }
   }
 
+  const testDatabaseWrite = async () => {
+    try {
+      console.log('Testing database write with minimal data...')
+      
+      const testData = {
+        title: 'Test Post',
+        content: 'Test content',
+        slug: 'test-post-' + Date.now(),
+        status: 'draft' as const,
+        author_id: user?.id
+      }
+
+      console.log('Test data:', testData)
+
+      const { data, error } = await supabase
+        .from('posts')
+        .insert([testData])
+        .select()
+
+      if (error) {
+        console.error('Test write failed:', error)
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
+        toast.error(`Database test failed: ${error.message}`)
+      } else {
+        console.log('Test write successful:', data)
+        toast.success('Database test successful!')
+        
+        // Clean up test post
+        if (data && data[0]) {
+          await supabase.from('posts').delete().eq('id', data[0].id)
+          console.log('Test post cleaned up')
+        }
+      }
+    } catch (error: any) {
+      console.error('Test write exception:', error)
+      toast.error(`Test failed: ${error.message}`)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
+    if (!user) {
+      toast.error('You must be logged in to create a post')
+      return
+    }
+
+    if (!title.trim()) {
+      toast.error('Title is required')
+      return
+    }
+
+    if (!content.trim()) {
+      toast.error('Content is required')
+      return
+    }
 
     setIsLoading(true)
 
     try {
-      const { error } = await supabase
+      console.log('=== POST CREATION DEBUG ===')
+      console.log('User:', user)
+      console.log('Environment:', {
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY
+      })
+
+      const postData = {
+        title: title.trim(),
+        content: content.trim(),
+        excerpt: excerpt.trim() || content.substring(0, 160) + '...',
+        slug: slug.trim() || generateSlug(title),
+        featured_image: featuredImage.trim() || null,
+        status,
+        meta_description: metaDescription.trim() || excerpt.trim() || content.substring(0, 160),
+        tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+        author_id: user.id,
+        published_at: status === 'published' ? new Date().toISOString() : null
+      }
+
+      console.log('Post data to insert:', postData)
+      console.log('Data types:', {
+        title: typeof postData.title,
+        content: typeof postData.content,
+        slug: typeof postData.slug,
+        status: typeof postData.status,
+        author_id: typeof postData.author_id,
+        tags: Array.isArray(postData.tags)
+      })
+
+      const { data, error } = await supabase
         .from('posts')
-        .insert([
-          {
-            title,
-            content,
-            excerpt: excerpt || content.substring(0, 160) + '...',
-            slug: slug || generateSlug(title),
-            featured_image: featuredImage || null,
-            status,
-            meta_description: metaDescription || excerpt || content.substring(0, 160),
-            tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-            author_id: user.id
-          }
-        ])
+        .insert([postData])
+        .select()
 
-      if (error) throw error
+      console.log('Supabase response:', { data, error })
 
+      if (error) {
+        console.error('=== SUPABASE ERROR DETAILS ===')
+        console.error('Code:', error.code)
+        console.error('Message:', error.message)
+        console.error('Details:', error.details)
+        console.error('Hint:', error.hint)
+        console.error('Full error object:', error)
+        
+        throw error
+      }
+
+      console.log('Post created successfully:', data)
       toast.success(`Post ${status === 'published' ? 'published' : 'saved as draft'} successfully!`)
       navigate('/')
-    } catch (error) {
-      toast.error('Error creating post')
+    } catch (error: any) {
+      console.error('=== CATCH BLOCK ERROR ===')
+      console.error('Error type:', typeof error)
+      console.error('Error constructor:', error.constructor.name)
+      console.error('Error message:', error.message)
+      console.error('Error code:', error.code)
+      console.error('Full error:', error)
+      console.error('Error stack:', error.stack)
+      
+      // More specific error messages
+      if (error.code === '23505') {
+        toast.error('A post with this slug already exists. Please use a different title or slug.')
+      } else if (error.code === '42501') {
+        toast.error('Permission denied. Please check your authentication.')
+      } else if (error.code === '42P01') {
+        toast.error('Posts table does not exist. Please check your database setup.')
+      } else if (error.message?.includes('posts')) {
+        toast.error('Database error: ' + error.message)
+      } else {
+        toast.error('Error creating post: ' + (error.message || 'Unknown error - check console for details'))
+      }
     } finally {
       setIsLoading(false)
     }
@@ -83,9 +234,27 @@ export function NewPost() {
           </button>
           <div className="header-divider"></div>
           <h1 className="editor-title">Create New Post</h1>
+          <span className="db-status" style={{ 
+            marginLeft: '1rem', 
+            padding: '0.25rem 0.5rem', 
+            borderRadius: '4px', 
+            fontSize: '0.75rem',
+            backgroundColor: dbStatus === 'Connected' ? '#10b981' : '#ef4444',
+            color: 'white'
+          }}>
+            DB: {dbStatus}
+          </span>
         </div>
         
         <div className="header-actions">
+          <button
+            onClick={testDatabaseWrite}
+            className="preview-btn"
+            style={{ marginRight: '0.5rem' }}
+          >
+            Test DB
+          </button>
+          
           <button
             onClick={() => setPreviewMode(!previewMode)}
             className={`preview-btn ${previewMode ? 'active' : ''}`}
@@ -104,7 +273,7 @@ export function NewPost() {
               className="save-btn draft"
             >
               <Save size={18} />
-              <span>Save Draft</span>
+              <span>{isLoading ? 'Saving...' : 'Save Draft'}</span>
             </button>
             
             <button
@@ -116,7 +285,7 @@ export function NewPost() {
               className="save-btn publish"
             >
               <Globe size={18} />
-              <span>Publish</span>
+              <span>{isLoading ? 'Publishing...' : 'Publish'}</span>
             </button>
           </div>
         </div>
