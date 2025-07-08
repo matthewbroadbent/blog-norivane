@@ -1,146 +1,175 @@
 import React, { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn } from 'lucide-react'
 import { Logo } from '../components/Logo'
+import { useAuth } from '../hooks/useAuth'
+import toast from 'react-hot-toast'
 
 export function Login() {
+  const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { signIn, signUp, user } = useAuth()
+  const { user, signIn, signUp } = useAuth()
 
-  // If user is already logged in, redirect to home
   if (user) {
     return <Navigate to="/" replace />
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!email || !password) {
-      toast.error('Please fill in all fields')
-      return
-    }
-
     setLoading(true)
 
     try {
-      const { error } = isSignUp 
-        ? await signUp(email, password)
-        : await signIn(email, password)
-
-      if (error) {
-        toast.error(error.message)
+      if (isSignUp) {
+        const { error } = await signUp(email, password)
+        if (error) {
+          toast.error(error.message)
+        } else {
+          toast.success('Account created successfully!')
+        }
       } else {
-        toast.success(isSignUp ? 'Account created successfully!' : 'Welcome back!')
+        const { error } = await signIn(email, password)
+        if (error) {
+          toast.error(error.message)
+        } else {
+          toast.success('Welcome back!')
+        }
       }
     } catch (error) {
       toast.error('An unexpected error occurred')
-      console.error('Auth error:', error)
     } finally {
       setLoading(false)
     }
   }
 
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp)
+    setEmail('')
+    setPassword('')
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <Logo size="lg" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isSignUp ? 'Start your blogging journey' : 'Welcome back to your blog'}
-          </p>
-        </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter your email"
-                />
-              </div>
+    <div className="auth-container">
+      <div className="auth-background"></div>
+      <div className="auth-gradient"></div>
+      
+      <div className="auth-content">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-logo">
+              <Logo size="lg" variant="dark" />
             </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none relative block w-full pl-10 pr-10 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
+            
+            <div className="auth-progress">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ width: isSignUp ? '100%' : '50%' }}
+                ></div>
               </div>
+              <span className="progress-text">
+                {isSignUp ? 'Create Account' : 'Sign In'}
+              </span>
             </div>
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {isSignUp ? 'Creating account...' : 'Signing in...'}
+          <div className="auth-body">
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="form-step active">
+                <div className="step-icon">
+                  {isSignUp ? <UserPlus size={24} /> : <LogIn size={24} />}
                 </div>
-              ) : (
-                isSignUp ? 'Create account' : 'Sign in'
-              )}
-            </button>
+                
+                <h1 className="step-title">
+                  {isSignUp ? 'Create your account' : 'Sign in to your account'}
+                </h1>
+                
+                <p className="step-subtitle">
+                  {isSignUp 
+                    ? 'Join Norivane and start managing your blog content with ease.'
+                    : 'Welcome back to your blog management dashboard.'
+                  }
+                </p>
+
+                <div className="input-group">
+                  <div className="input-wrapper">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="auth-input"
+                      required
+                      disabled={loading}
+                    />
+                    <Mail size={20} className="input-icon" />
+                  </div>
+                  <div className="input-hint">
+                    <span>We'll use this to send you important updates</span>
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <div className="input-wrapper">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="auth-input"
+                      required
+                      disabled={loading}
+                    />
+                    <Lock size={20} className="input-icon" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="password-toggle"
+                      disabled={loading}
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  <div className="input-hint">
+                    <span>
+                      {isSignUp 
+                        ? 'Choose a strong password with at least 6 characters'
+                        : 'Enter the password for your account'
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                <div className="button-group">
+                  <button
+                    type="submit"
+                    className="auth-button primary"
+                    disabled={loading || !email || !password}
+                  >
+                    {loading ? (
+                      <div className="button-loading">
+                        <div className="loading-spinner"></div>
+                      </div>
+                    ) : (
+                      <>
+                        <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
+                        <ArrowRight size={20} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
 
-          <div className="text-center">
+          <div className="auth-footer">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-teal-600 hover:text-teal-500 transition-colors"
+              onClick={toggleMode}
+              className="mode-switch"
+              disabled={loading}
             >
               {isSignUp 
                 ? 'Already have an account? Sign in' 
@@ -148,7 +177,7 @@ export function Login() {
               }
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
