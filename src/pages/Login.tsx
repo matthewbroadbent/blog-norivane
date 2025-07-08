@@ -1,218 +1,154 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Logo } from '../components/Logo'
+import { Navigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
-import toast from 'react-hot-toast'
-import { ArrowRight, Mail, Lock, User } from 'lucide-react'
+import { Logo } from '../components/Logo'
 
 export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
-  const { signIn, signUp } = useAuth()
-  const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const { signIn, signUp, user } = useAuth()
+
+  // If user is already logged in, redirect to home
+  if (user) {
+    return <Navigate to="/" replace />
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+    
+    if (!email || !password) {
+      toast.error('Please fill in all fields')
+      return
+    }
+
+    setLoading(true)
 
     try {
-      if (isSignUp) {
-        const { error } = await signUp(email, password)
-        if (error) {
-          toast.error(error.message)
-        } else {
-          toast.success('Account created successfully! You can now sign in.')
-          setIsSignUp(false)
-          setPassword('')
-          setCurrentStep(0)
-        }
+      const { error } = isSignUp 
+        ? await signUp(email, password)
+        : await signIn(email, password)
+
+      if (error) {
+        toast.error(error.message)
       } else {
-        const { error } = await signIn(email, password)
-        if (error) {
-          toast.error(error.message)
-        } else {
-          toast.success('Signed in successfully!')
-          navigate('/')
-        }
+        toast.success(isSignUp ? 'Account created successfully!' : 'Welcome back!')
       }
     } catch (error) {
-      toast.error(`An error occurred during ${isSignUp ? 'sign up' : 'sign in'}`)
+      toast.error('An unexpected error occurred')
+      console.error('Auth error:', error)
     } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleModeSwitch = () => {
-    setIsSignUp(!isSignUp)
-    setPassword('')
-    setCurrentStep(0)
-  }
-
-  const nextStep = () => {
-    if (currentStep === 0 && email) {
-      setCurrentStep(1)
-    }
-  }
-
-  const prevStep = () => {
-    if (currentStep === 1) {
-      setCurrentStep(0)
+      setLoading(false)
     }
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-background">
-        <div className="auth-gradient"></div>
-      </div>
-      
-      <div className="auth-content">
-        <div className="auth-card">
-          <div className="auth-header">
-            <div className="auth-logo">
-              <Logo size="lg" variant="dark" />
-            </div>
-            
-            <div className="auth-progress">
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill"
-                  style={{ width: `${((currentStep + 1) / 2) * 100}%` }}
-                ></div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="flex justify-center mb-6">
+            <Logo size="lg" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {isSignUp ? 'Create your account' : 'Sign in to your account'}
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            {isSignUp ? 'Start your blogging journey' : 'Welcome back to your blog'}
+          </p>
+        </div>
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm"
+                  placeholder="Enter your email"
+                />
               </div>
-              <span className="progress-text">{currentStep + 1} of 2</span>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none relative block w-full pl-10 pr-10 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="auth-body">
-            <form onSubmit={handleSubmit} className="auth-form">
-              {currentStep === 0 ? (
-                <div className="form-step active">
-                  <div className="step-icon">
-                    <Mail size={24} />
-                  </div>
-                  
-                  <h1 className="step-title">
-                    {isSignUp ? "Let's create your admin account" : "Welcome back"}
-                  </h1>
-                  
-                  <p className="step-subtitle">
-                    {isSignUp 
-                      ? "First, we'll need your email address to set up your CMS"
-                      : "Enter your email to access your blog CMS"
-                    }
-                  </p>
-
-                  <div className="input-group">
-                    <div className="input-wrapper">
-                      <Mail className="input-icon" size={20} />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your@email.com"
-                        className="auth-input"
-                        required
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    disabled={!email}
-                    className="auth-button primary"
-                  >
-                    Continue
-                    <ArrowRight size={20} />
-                  </button>
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {isSignUp ? 'Creating account...' : 'Signing in...'}
                 </div>
               ) : (
-                <div className="form-step active">
-                  <div className="step-icon">
-                    <Lock size={24} />
-                  </div>
-                  
-                  <h1 className="step-title">
-                    {isSignUp ? "Create a secure password" : `Welcome back, ${email.split('@')[0]}`}
-                  </h1>
-                  
-                  <p className="step-subtitle">
-                    {isSignUp 
-                      ? "Choose a strong password to protect your content"
-                      : "Enter your password to continue"
-                    }
-                  </p>
-
-                  <div className="input-group">
-                    <div className="input-wrapper">
-                      <Lock className="input-icon" size={20} />
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder={isSignUp ? "Create password" : "Enter password"}
-                        className="auth-input"
-                        required
-                        minLength={isSignUp ? 6 : undefined}
-                        autoFocus
-                      />
-                    </div>
-                    {isSignUp && (
-                      <p className="input-hint">
-                        Password must be at least 6 characters long
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="button-group">
-                    <button
-                      type="button"
-                      onClick={prevStep}
-                      className="auth-button secondary"
-                    >
-                      Back
-                    </button>
-                    
-                    <button
-                      type="submit"
-                      disabled={isLoading || !password}
-                      className="auth-button primary"
-                    >
-                      {isLoading ? (
-                        <div className="button-loading">
-                          <div className="loading-spinner"></div>
-                        </div>
-                      ) : (
-                        <>
-                          {isSignUp ? 'Create Account' : 'Sign In'}
-                          <ArrowRight size={20} />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                isSignUp ? 'Create account' : 'Sign in'
               )}
-            </form>
+            </button>
           </div>
 
-          <div className="auth-footer">
+          <div className="text-center">
             <button
               type="button"
-              onClick={handleModeSwitch}
-              className="mode-switch"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-teal-600 hover:text-teal-500 transition-colors"
             >
               {isSignUp 
-                ? 'Already have an account? Sign in instead' 
-                : 'Need to create an admin account? Sign up instead'
+                ? 'Already have an account? Sign in' 
+                : "Don't have an account? Sign up"
               }
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   )

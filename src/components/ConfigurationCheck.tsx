@@ -18,13 +18,13 @@ export function ConfigurationCheck() {
               Supabase Configuration Required
             </h2>
             <p className="text-yellow-700 mb-4">
-              You are connected to Supabase but no project is selected. Please select a project in the chat box before proceeding with database operations.
+              Please connect to Supabase in the chat box before proceeding with database operations.
             </p>
             <div className="bg-white rounded-md p-4 mb-4">
               <h3 className="font-medium text-gray-900 mb-2">Required Steps:</h3>
               <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
-                <li>Select your Supabase project in the chat</li>
-                <li>Update your .env file with the correct credentials</li>
+                <li>Connect to Supabase in the chat</li>
+                <li>Ensure your .env file has the correct credentials</li>
                 <li>Refresh this page</li>
               </ol>
             </div>

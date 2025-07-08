@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Filter, Grid, List, Calendar, TrendingUp } from 'lucide-react'
+import { Plus, Search, Filter, Grid, List, Calendar, TrendingUp, FileText } from 'lucide-react'
 import { PostCard } from '../components/PostCard'
 import { Post } from '../types'
 import { supabase } from '../lib/supabase'
