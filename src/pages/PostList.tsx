@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Filter, Grid, List, Calendar, TrendingUp } from 'lucide-react'
 import { PostCard } from '../components/PostCard'
 import { Post } from '../types'
 import { supabase } from '../lib/supabase'
@@ -11,6 +11,7 @@ export function PostList() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   useEffect(() => {
     fetchPosts()
@@ -55,73 +56,141 @@ export function PostList() {
     return matchesSearch && matchesStatus
   })
 
+  const stats = {
+    total: posts.length,
+    published: posts.filter(p => p.status === 'published').length,
+    drafts: posts.filter(p => p.status === 'draft').length
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="loading" />
+      <div className="loading-container">
+        <div className="loading-spinner large"></div>
+        <p className="loading-text">Loading your posts...</p>
       </div>
     )
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Blog Posts</h1>
-          <p className="text-gray-600 mt-2">Manage your blog content</p>
+    <div className="post-list-page">
+      <div className="page-header">
+        <div className="header-content">
+          <div className="header-text">
+            <h1 className="page-title">Blog Posts</h1>
+            <p className="page-subtitle">Manage and create engaging content for your blog</p>
+          </div>
+          
+          <Link to="/new" className="create-btn">
+            <Plus size={20} />
+            <span>New Post</span>
+          </Link>
         </div>
-        
-        <Link to="/new" className="btn-primary flex items-center space-x-2">
-          <Plus size={20} />
-          <span>New Post</span>
-        </Link>
+
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon total">
+              <FileText size={20} />
+            </div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.total}</span>
+              <span className="stat-label">Total Posts</span>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-icon published">
+              <TrendingUp size={20} />
+            </div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.published}</span>
+              <span className="stat-label">Published</span>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-icon drafts">
+              <Calendar size={20} />
+            </div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.drafts}</span>
+              <span className="stat-label">Drafts</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+      <div className="content-controls">
+        <div className="search-container">
+          <Search className="search-icon" size={20} />
           <input
             type="text"
-            placeholder="Search posts..."
+            placeholder="Search posts by title or content..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 w-full"
+            className="search-input"
           />
         </div>
         
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as 'all' | 'draft' | 'published')}
-          className="w-full sm:w-auto"
-        >
-          <option value="all">All Posts</option>
-          <option value="draft">Drafts</option>
-          <option value="published">Published</option>
-        </select>
+        <div className="filter-controls">
+          <div className="filter-group">
+            <Filter size={16} />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'draft' | 'published')}
+              className="filter-select"
+            >
+              <option value="all">All Posts</option>
+              <option value="published">Published</option>
+              <option value="draft">Drafts</option>
+            </select>
+          </div>
+          
+          <div className="view-toggle">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            >
+              <Grid size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+            >
+              <List size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {filteredPosts.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
-          <p className="text-gray-600 mb-6">
+        <div className="empty-state">
+          <div className="empty-icon">
+            <FileText size={48} />
+          </div>
+          <h3 className="empty-title">
+            {posts.length === 0 ? "No posts yet" : "No posts found"}
+          </h3>
+          <p className="empty-description">
             {posts.length === 0 
-              ? "Get started by creating your first blog post."
+              ? "Start creating engaging content for your blog audience."
               : "Try adjusting your search or filter criteria."
             }
           </p>
           {posts.length === 0 && (
-            <Link to="/new" className="btn-primary">
+            <Link to="/new" className="empty-action">
+              <Plus size={20} />
               Create Your First Post
             </Link>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={`posts-container ${viewMode}`}>
           {filteredPosts.map((post) => (
             <PostCard
               key={post.id}
               post={post}
               onDelete={handleDelete}
+              viewMode={viewMode}
             />
           ))}
         </div>

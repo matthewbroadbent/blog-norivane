@@ -1,6 +1,6 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, PenTool, FileText, Settings } from 'lucide-react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { LogOut, PenTool, FileText, Plus, Search, Bell, User } from 'lucide-react'
 import { Logo } from './Logo'
 import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
@@ -12,6 +12,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleSignOut = async () => {
     const { error } = await signOut()
@@ -23,49 +24,64 @@ export function Layout({ children }: LayoutProps) {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center space-x-3">
-              <Logo size="md" />
-              <span className="text-sm font-medium text-gray-600">CMS</span>
-            </Link>
-            
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link 
-                to="/" 
-                className="flex items-center space-x-2 text-gray-700 hover:text-teal-600 transition-colors"
-              >
-                <FileText size={18} />
-                <span>Posts</span>
-              </Link>
-              <Link 
-                to="/new" 
-                className="flex items-center space-x-2 text-gray-700 hover:text-teal-600 transition-colors"
-              >
-                <PenTool size={18} />
-                <span>New Post</span>
-              </Link>
-            </nav>
+  const isActive = (path: string) => location.pathname === path
 
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{user?.email}</span>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center space-x-2 text-gray-700 hover:text-red-600 transition-colors"
-              >
-                <LogOut size={18} />
-                <span className="hidden sm:inline">Sign Out</span>
-              </button>
+  return (
+    <div className="cms-layout">
+      <header className="cms-header">
+        <div className="header-container">
+          <div className="header-left">
+            <Link to="/" className="logo-container">
+              <Logo size="md" variant="dark" />
+              <div className="cms-badge">
+                <span>CMS</span>
+              </div>
+            </Link>
+          </div>
+          
+          <nav className="header-nav">
+            <Link 
+              to="/" 
+              className={`nav-item ${isActive('/') ? 'active' : ''}`}
+            >
+              <FileText size={18} />
+              <span>Posts</span>
+            </Link>
+            <Link 
+              to="/new" 
+              className={`nav-item ${isActive('/new') ? 'active' : ''}`}
+            >
+              <PenTool size={18} />
+              <span>New Post</span>
+            </Link>
+          </nav>
+
+          <div className="header-right">
+            <div className="user-info">
+              <div className="user-avatar">
+                <User size={16} />
+              </div>
+              <div className="user-details">
+                <span className="user-email">{user?.email}</span>
+                <span className="user-role">Admin</span>
+              </div>
             </div>
+            
+            <button
+              onClick={handleSignOut}
+              className="sign-out-btn"
+              title="Sign Out"
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {children}
+      <main className="cms-main">
+        <div className="main-container">
+          {children}
+        </div>
       </main>
     </div>
   )
