@@ -1,0 +1,15 @@
+# Dependency directories
+node_modules/
+.pnpm-store/ # If pnpm uses a global store in your project directory
+
+# Environment variables
+.env
+.env.local
+
+# Build outputs
+.vercel/
+dist/
+build/
+
+# IDE files
+.vscode/ # Optional: if you don't want to commit VS Code settings specific to your local setup
