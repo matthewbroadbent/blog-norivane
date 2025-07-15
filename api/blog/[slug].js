@@ -2,14 +2,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const ALLOWED_ORIGIN = 'https://www.norivane.co.uk'; 
-
-const setCorsHeaders = (res) => {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-};
+// Removed: ALLOWED_ORIGIN constant
+// Removed: setCorsHeaders function
 
 const getSupabaseWithAuth = (req) => {
   const authHeader = req.headers.authorization;
@@ -23,19 +17,11 @@ const getSupabaseWithAuth = (req) => {
 };
 
 export default async function handler(req, res) {
-  // --- ABSOLUTE FIRST LOG ---
+  // Removed: setCorsHeaders(res);
+  // Removed: if (req.method === 'OPTIONS') { return res.status(200).end(); }
+
+  // All console.logs are helpful for debugging, keep them.
   console.log(`[START] Handler invoked for method: ${req.method} and path: ${req.url}`);
-
-  // --- ALWAYS CALL CORS HEADERS AT THE VERY TOP ---
-  setCorsHeaders(res);
-
-  // --- Handle preflight OPTIONS request ---
-  if (req.method === 'OPTIONS') {
-    console.log(`[OPTIONS] Preflight request received for path: ${req.url}. Responding with 200 OK.`);
-    return res.status(200).end();
-  }
-
-  // --- General Request Logging (after OPTIONS handling) ---
   console.log(`[${req.method}] Processing request for slug: ${req.query.slug}`);
   console.log(`[${req.method}] Full URL: ${req.url}`);
   console.log(`[${req.method}] Headers:`, req.headers); // Log all headers to check origin

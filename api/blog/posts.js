@@ -2,14 +2,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const ALLOWED_ORIGIN = 'https://www.norivane.co.uk';
-
-const setCorsHeaders = (res) => {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'); // Methods handled by this specific file
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
-};
+// Removed: ALLOWED_ORIGIN constant
+// Removed: setCorsHeaders function
 
 const getSupabaseWithAuth = (req) => {
   const authHeader = req.headers.authorization;
@@ -22,14 +16,10 @@ const getSupabaseWithAuth = (req) => {
   });
 };
 
-export default async function handler(req, res) {
-  // --- ALWAYS CALL CORS HEADERS AT THE VERY TOP ---
-  setCorsHeaders(res);
 
-  // --- Handle preflight OPTIONS request ---
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+export default async function handler(req, res) {
+  // Removed: setCorsHeaders(res);
+  // Removed: if (req.method === 'OPTIONS') { return res.status(200).end(); }
 
   const supabaseUnauthenticated = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
 
@@ -58,15 +48,13 @@ export default async function handler(req, res) {
     }
 
     const postData = req.body;
-    // Consider adding slugification here if the frontend doesn't guarantee it for new posts
-    // For example: postData.slug = slugify(postData.title); if you have a slugify utility here
 
     const { data, error } = await supabase.from('posts').insert(postData).select();
     if (error) {
         console.error('[POST /api/blog/posts] Error creating post:', error.message);
         return res.status(500).json({ error: error.message });
     }
-    return res.status(201).json(data[0]); // 201 Created
+    return res.status(201).json(data[0]);
   }
 
   // --- Handle any other methods not explicitly allowed ---
