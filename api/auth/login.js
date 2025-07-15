@@ -2,39 +2,37 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client directly in the API route using environment variables.
-// This is the secure, standard way to do it on Vercel.
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_ANON_KEY
-);
+const ALLOWED_ORIGIN = 'https://www.norivane.co.uk';
+
+const setCorsHeaders = (res) => {
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); // Only methods this file handles
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Authorization might not be needed for login preflight
+  res.setHeader('Access-Control-Max-Age', '86400');
+};
 
 export default async function handler(req, res) {
-  // Ensure we are only handling POST requests
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).end('Method Not Allowed');
+  // --- ALWAYS CALL CORS HEADERS AT THE VERY TOP ---
+  setCorsHeaders(res);
+
+  // --- Handle preflight OPTIONS request ---
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
-  const { email, password } = req.body;
+  const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
-  }
-
-  try {
-    // Call Supabase to sign the user in
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
+  if (req.method === 'POST') {
+    const { email, password } = req.body;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       return res.status(401).json({ error: error.message });
     }
-
-    return res.status(200).json({ session: data.session });
-  } catch (err) {
-    return res.status(500).json({ error: 'An unexpected error occurred.' });
+    return res.status(200).json(data);
   }
+
+  // --- Handle any other methods not explicitly allowed ---
+  res.setHeader('Allow', ['POST', 'OPTIONS']);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
