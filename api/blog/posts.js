@@ -46,7 +46,8 @@ export default async function handler(req, res) {
       created_at: post.created_at,
       meta_title: post.meta_title,
       meta_description: post.meta_description,
-      tags: post.tags || []
+      tags: post.tags || [],
+      category: post.category // This line was added to include the category
     }))
 
     res.status(200).json({ posts: publicPosts })
