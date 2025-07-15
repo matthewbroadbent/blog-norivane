@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Filter, Grid, List, Calendar, TrendingUp, FileText } from 'lucide-react'
-import { PostCard } from '../components/PostCard'
-import { Post } from '../types'
+import { Plus, Edit, Trash2, Eye, Calendar, Tag } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { Post } from '../types'
 import toast from 'react-hot-toast'
 
 export function PostList() {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   useEffect(() => {
     fetchPosts()
@@ -27,13 +23,16 @@ export function PostList() {
       if (error) throw error
       setPosts(data || [])
     } catch (error) {
-      toast.error('Error fetching posts')
+      console.error('Error fetching posts:', error)
+      toast.error('Error loading posts')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const deletePost = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) return
+
     try {
       const { error } = await supabase
         .from('posts')
@@ -45,153 +44,127 @@ export function PostList() {
       setPosts(posts.filter(post => post.id !== id))
       toast.success('Post deleted successfully')
     } catch (error) {
+      console.error('Error deleting post:', error)
       toast.error('Error deleting post')
     }
   }
 
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.content.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || post.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
-
-  const stats = {
-    total: posts.length,
-    published: posts.filter(p => p.status === 'published').length,
-    drafts: posts.filter(p => p.status === 'draft').length
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
   }
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner large"></div>
-        <p className="loading-text">Loading your posts...</p>
+      <div className="flex items-center justify-center py-12">
+        <div className="loading" />
+        <span className="ml-2 text-gray-600">Loading posts...</span>
       </div>
     )
   }
 
   return (
-    <div className="post-list-page">
-      <div className="page-header">
-        <div className="header-content">
-          <div className="header-text">
-            <h1 className="page-title">Blog Posts</h1>
-            <p className="page-subtitle">Manage and create engaging content for your blog</p>
-          </div>
-          
-          <Link to="/new" className="create-btn">
-            <Plus size={20} />
-            <span>New Post</span>
-          </Link>
-        </div>
-
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon total">
-              <FileText size={20} />
-            </div>
-            <div className="stat-content">
-              <span className="stat-number">{stats.total}</span>
-              <span className="stat-label">Total Posts</span>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon published">
-              <TrendingUp size={20} />
-            </div>
-            <div className="stat-content">
-              <span className="stat-number">{stats.published}</span>
-              <span className="stat-label">Published</span>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon drafts">
-              <Calendar size={20} />
-            </div>
-            <div className="stat-content">
-              <span className="stat-number">{stats.drafts}</span>
-              <span className="stat-label">Drafts</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="content-controls">
-        <div className="search-container">
-          <Search className="search-icon" size={20} />
-          <input
-            type="text"
-            placeholder="Search posts by title or content..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+    <div>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Blog Posts</h1>
+          <p className="text-gray-600 mt-2">Manage your blog content</p>
         </div>
         
-        <div className="filter-controls">
-          <div className="filter-group">
-            <Filter size={16} />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'draft' | 'published')}
-              className="filter-select"
-            >
-              <option value="all">All Posts</option>
-              <option value="published">Published</option>
-              <option value="draft">Drafts</option>
-            </select>
-          </div>
-          
-          <div className="view-toggle">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            >
-              <Grid size={16} />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-            >
-              <List size={16} />
-            </button>
-          </div>
-        </div>
+        <Link to="/new" className="btn-primary flex items-center space-x-2">
+          <Plus size={16} />
+          <span>New Post</span>
+        </Link>
       </div>
 
-      {filteredPosts.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">
-            <FileText size={48} />
+      {posts.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Plus className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="empty-title">
-            {posts.length === 0 ? "No posts yet" : "No posts found"}
-          </h3>
-          <p className="empty-description">
-            {posts.length === 0 
-              ? "Start creating engaging content for your blog audience."
-              : "Try adjusting your search or filter criteria."
-            }
-          </p>
-          {posts.length === 0 && (
-            <Link to="/new" className="empty-action">
-              <Plus size={20} />
-              Create Your First Post
-            </Link>
-          )}
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
+          <p className="text-gray-600 mb-6">Get started by creating your first blog post.</p>
+          <Link to="/new" className="btn-primary">
+            Create your first post
+          </Link>
         </div>
       ) : (
-        <div className={`posts-container ${viewMode}`}>
-          {filteredPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onDelete={handleDelete}
-              viewMode={viewMode}
-            />
+        <div className="grid gap-6">
+          {posts.map((post) => (
+            <div key={post.id} className="card hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      {post.title}
+                    </h2>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      post.status === 'published' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {post.status}
+                    </span>
+                  </div>
+                  
+                  {post.excerpt && (
+                    <p className="text-gray-600 mb-3 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <div className="flex items-center space-x-1">
+                      <Calendar size={14} />
+                      <span>
+                        {post.published_at 
+                          ? `Published ${formatDate(post.published_at)}`
+                          : `Created ${formatDate(post.created_at)}`
+                        }
+                      </span>
+                    </div>
+                    
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="flex items-center space-x-1">
+                        <Tag size={14} />
+                        <span>{post.tags.slice(0, 3).join(', ')}</span>
+                        {post.tags.length > 3 && <span>+{post.tags.length - 3}</span>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2 ml-4">
+                  {post.status === 'published' && (
+                    <button
+                      className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                      title="View Post"
+                    >
+                      <Eye size={16} />
+                    </button>
+                  )}
+                  
+                  <Link
+                    to={`/edit/${post.id}`}
+                    className="p-2 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50"
+                    title="Edit Post"
+                  >
+                    <Edit size={16} />
+                  </Link>
+                  
+                  <button
+                    onClick={() => deletePost(post.id)}
+                    className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                    title="Delete Post"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}

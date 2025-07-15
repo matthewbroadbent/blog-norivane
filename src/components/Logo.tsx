@@ -1,37 +1,27 @@
 import React from 'react'
 
 interface LogoProps {
-  variant?: 'dark' | 'light'
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-  className?: string
+  size?: 'sm' | 'md' | 'lg'
+  variant?: 'light' | 'dark'
 }
 
-export function Logo({ variant = 'dark', size = 'md', className = '' }: LogoProps) {
+export function Logo({ size = 'md', variant = 'light' }: LogoProps) {
   const sizeClasses = {
-    sm: 'text-lg',
+    sm: 'text-xl',
     md: 'text-2xl',
-    lg: 'text-4xl',
-    xl: 'text-5xl'
+    lg: 'text-3xl'
   }
 
-  const primaryColor = variant === 'dark' ? '#0A2342' : '#FFFFFF'
-  const accentColor = '#00B2A9'
+  const colorClasses = {
+    light: 'text-white',
+    dark: 'text-gray-900'
+  }
 
   return (
-    <div className={`font-montserrat ${sizeClasses[size]} font-medium tracking-tight select-none ${className}`}>
-      <span style={{ color: primaryColor }}>nor</span>
-      <span 
-        style={{ 
-          color: accentColor, 
-          fontStyle: 'italic', 
-          fontWeight: 400,
-          position: 'relative',
-          display: 'inline-block'
-        }}
-      >
-        i
+    <div className={`font-bold ${sizeClasses[size]} ${colorClasses[variant]}`}>
+      <span className="bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
+        Norivane
       </span>
-      <span style={{ color: primaryColor }}>vane</span>
     </div>
   )
 }

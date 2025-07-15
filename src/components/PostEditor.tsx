@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Save, Eye, ArrowLeft } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { TipTapEditor } from './TipTapEditor'
 import { Post } from '../types'
 import toast from 'react-hot-toast'
 
@@ -16,7 +14,7 @@ interface PostEditorProps {
 interface FormData {
   title: string
   slug: string
-  content: string
+  content: any
   excerpt: string
   featured_image: string
   status: 'draft' | 'published'
@@ -28,13 +26,14 @@ interface FormData {
 export function PostEditor({ post, onSave }: PostEditorProps) {
   const [isPreview, setIsPreview] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [editorContent, setEditorContent] = useState(post?.content || null)
   const navigate = useNavigate()
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     defaultValues: {
       title: post?.title || '',
       slug: post?.slug || '',
-      content: post?.content || '',
+      content: post?.content || null,
       excerpt: post?.excerpt || '',
       featured_image: post?.featured_image || '',
       status: post?.status || 'draft',
@@ -45,10 +44,9 @@ export function PostEditor({ post, onSave }: PostEditorProps) {
   })
 
   const title = watch('title')
-  const content = watch('content')
 
   // Auto-generate slug from title
-  useEffect(() => {
+  React.useEffect(() => {
     if (title && !post) {
       const slug = title
         .toLowerCase()
@@ -65,6 +63,7 @@ export function PostEditor({ post, onSave }: PostEditorProps) {
     try {
       const postData: Partial<Post> = {
         ...data,
+        content: editorContent,
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
         published_at: data.status === 'published' && post?.status !== 'published' 
           ? new Date().toISOString() 
@@ -75,6 +74,7 @@ export function PostEditor({ post, onSave }: PostEditorProps) {
       toast.success(post ? 'Post updated successfully!' : 'Post created successfully!')
       navigate('/')
     } catch (error) {
+      console.error('Error saving post:', error)
       toast.error('Error saving post')
     } finally {
       setIsSaving(false)
@@ -121,29 +121,8 @@ export function PostEditor({ post, onSave }: PostEditorProps) {
             <div className="card">
               <h1 className="text-3xl font-bold mb-4">{title}</h1>
               <div className="prose prose-lg max-w-none">
-                <ReactMarkdown
-                  components={{
-                    code({ node, inline, className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || '')
-                      return !inline && match ? (
-                        <SyntaxHighlighter
-                          style={tomorrow}
-                          language={match[1]}
-                          PreTag="div"
-                          {...props}
-                        >
-                          {String(children).replace(/\n$/, '')}
-                        </SyntaxHighlighter>
-                      ) : (
-                        <code className={className} {...props}>
-                          {children}
-                        </code>
-                      )
-                    }
-                  }}
-                >
-                  {content}
-                </ReactMarkdown>
+                {/* Preview would render the TipTap content as HTML */}
+                <div>Preview mode - content would be rendered here</div>
               </div>
             </div>
           ) : (
@@ -182,15 +161,12 @@ export function PostEditor({ post, onSave }: PostEditorProps) {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="content">Content *</label>
-                  <textarea
-                    id="content"
-                    rows={20}
-                    {...register('content', { required: 'Content is required' })}
-                    placeholder="Write your post content in Markdown..."
-                    className="font-mono"
+                  <label>Content *</label>
+                  <TipTapEditor
+                    content={editorContent}
+                    onChange={setEditorContent}
+                    placeholder="Start writing your post..."
                   />
-                  {errors.content && <div className="error">{errors.content.message}</div>}
                 </div>
               </div>
             </form>

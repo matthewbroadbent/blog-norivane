@@ -2,8 +2,8 @@ export interface Post {
   id: string
   title: string
   slug: string
-  content: string
-  excerpt: string
+  content: any // JSON content from TipTap
+  excerpt?: string
   featured_image?: string
   status: 'draft' | 'published'
   published_at?: string

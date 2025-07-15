@@ -1,6 +1,6 @@
 import React from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { LogOut, PenTool, FileText, Plus, Search, Bell, User } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { LogOut, Plus, FileText, User } from 'lucide-react'
 import { Logo } from './Logo'
 import { useAuth } from '../hooks/useAuth'
 import toast from 'react-hot-toast'
@@ -11,7 +11,6 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth()
-  const navigate = useNavigate()
   const location = useLocation()
 
   const handleSignOut = async () => {
@@ -20,68 +19,66 @@ export function Layout({ children }: LayoutProps) {
       toast.error('Error signing out')
     } else {
       toast.success('Signed out successfully')
-      navigate('/login')
     }
   }
 
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <div className="cms-layout">
-      <header className="cms-header">
-        <div className="header-container">
-          <div className="header-left">
-            <Link to="/" className="logo-container">
-              <Logo size="md" variant="dark" />
-              <div className="cms-badge">
-                <span>CMS</span>
-              </div>
-            </Link>
-          </div>
-          
-          <nav className="header-nav">
-            <Link 
-              to="/" 
-              className={`nav-item ${isActive('/') ? 'active' : ''}`}
-            >
-              <FileText size={18} />
-              <span>Posts</span>
-            </Link>
-            <Link 
-              to="/new" 
-              className={`nav-item ${isActive('/new') ? 'active' : ''}`}
-            >
-              <PenTool size={18} />
-              <span>New Post</span>
-            </Link>
-          </nav>
-
-          <div className="header-right">
-            <div className="user-info">
-              <div className="user-avatar">
-                <User size={16} />
-              </div>
-              <div className="user-details">
-                <span className="user-email">{user?.email}</span>
-                <span className="user-role">Admin</span>
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-8">
+              <Logo variant="dark" />
+              
+              <div className="hidden md:flex items-center space-x-6">
+                <Link
+                  to="/"
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive('/') 
+                      ? 'bg-primary-100 text-primary-700' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  <FileText size={16} />
+                  <span>Posts</span>
+                </Link>
+                
+                <Link
+                  to="/new"
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive('/new') 
+                      ? 'bg-primary-100 text-primary-700' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  <Plus size={16} />
+                  <span>New Post</span>
+                </Link>
               </div>
             </div>
-            
-            <button
-              onClick={handleSignOut}
-              className="sign-out-btn"
-              title="Sign Out"
-            >
-              <LogOut size={18} />
-            </button>
+
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <User size={16} />
+                <span>{user?.email}</span>
+              </div>
+              
+              <button
+                onClick={handleSignOut}
+                className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <LogOut size={16} />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="cms-main">
-        <div className="main-container">
-          {children}
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {children}
       </main>
     </div>
   )
