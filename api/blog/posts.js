@@ -10,7 +10,6 @@ const getSupabaseWithAuth = (req) => {
 };
 
 export default async function handler(req, res) {
-  // New block to handle preflight OPTIONS requests for CORS
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -29,7 +28,9 @@ export default async function handler(req, res) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return res.status(401).json({ error: 'Unauthorized: Invalid token' });
 
-    const postData = await req.json();
+    // THE FIX IS HERE: Changed from await req.json() to req.body
+    const postData = req.body;
+    
     const { data, error } = await supabase.from('posts').insert([postData]).select();
     if (error) return res.status(500).json({ error: error.message });
     return res.status(201).json(data[0]);
