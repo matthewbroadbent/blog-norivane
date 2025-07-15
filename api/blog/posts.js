@@ -1,58 +1,40 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://dlcisomjvwmxtlhnsgmh.supabase.co'
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsY2lzb21qdndteHRsaG5zZ21oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5NzA2MTEsImV4cCI6MjA2NzU0NjYxMX0.umIDH1GBa5EaUGe5ROC7AanE8QmVNM8Y0IOjRyNqz60'
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const getSupabaseWithAuth = (req) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.split(' ')[1];
+  return createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+};
 
 export default async function handler(req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
+  // New block to handle preflight OPTIONS requests for CORS
   if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
+    return res.status(200).end();
   }
 
-  if (req.method !== 'GET') {
-    res.status(405).json({ error: 'Method not allowed' })
-    return
+  if (req.method === 'GET') {
+    const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
+    const { data, error } = await supabase.from('posts').select('*');
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json(data);
   }
 
-  try {
-    const { data: posts, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
+  if (req.method === 'POST') {
+    const supabase = getSupabaseWithAuth(req);
+    if (!supabase) return res.status(401).json({ error: 'Unauthorized: Missing token' });
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return res.status(401).json({ error: 'Unauthorized: Invalid token' });
 
-    if (error) {
-      console.error('Supabase error:', error)
-      res.status(500).json({ error: 'Failed to fetch posts' })
-      return
-    }
-
-    // Transform posts for public consumption
-    const publicPosts = posts.map(post => ({
-      id: post.id,
-      title: post.title,
-      slug: post.slug,
-      content: post.content,
-      excerpt: post.excerpt,
-      featured_image: post.featured_image,
-      published_at: post.published_at,
-      created_at: post.created_at,
-      meta_title: post.meta_title,
-      meta_description: post.meta_description,
-      tags: post.tags || [],
-      category: post.category // This line was added to include the category
-    }))
-
-    res.status(200).json({ posts: publicPosts })
-  } catch (error) {
-    console.error('API error:', error)
-    res.status(500).json({ error: 'Internal server error' })
+    const postData = await req.json();
+    const { data, error } = await supabase.from('posts').insert([postData]).select();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(201).json(data[0]);
   }
+
+  res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
