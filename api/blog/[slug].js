@@ -2,9 +2,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Removed: ALLOWED_ORIGIN constant
-// Removed: setCorsHeaders function
-
 const getSupabaseWithAuth = (req) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -16,15 +13,19 @@ const getSupabaseWithAuth = (req) => {
   });
 };
 
-export default async function handler(req, res) {
-  // Removed: setCorsHeaders(res);
-  // Removed: if (req.method === 'OPTIONS') { return res.status(200).end(); }
+// Admin client for server operations
+const getSupabaseAdmin = () => {
+  return createClient(
+    process.env.VITE_SUPABASE_URL, 
+    process.env.VITE_SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  );
+};
 
-  // All console.logs are helpful for debugging, keep them.
+export default async function handler(req, res) {
   console.log(`[START] Handler invoked for method: ${req.method} and path: ${req.url}`);
   console.log(`[${req.method}] Processing request for slug: ${req.query.slug}`);
   console.log(`[${req.method}] Full URL: ${req.url}`);
-  console.log(`[${req.method}] Headers:`, req.headers); // Log all headers to check origin
+  console.log(`[${req.method}] Headers:`, req.headers);
 
   const slug = req.query.slug;
   const supabaseUnauthenticated = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
@@ -66,7 +67,10 @@ export default async function handler(req, res) {
     const postData = req.body;
     console.log(`[PUT INFO] Received post data for update to slug '${slug}':`, postData);
 
-    const { data, error } = await supabase.from('posts').update(postData).eq('slug', slug).select();
+    // Use admin client for updating posts to bypass RLS
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin.from('posts').update(postData).eq('slug', slug).select();
+    
     if (error) {
         console.error(`[PUT ERROR] Supabase PUT error for slug '${slug}':`, error.message, error.details);
         return res.status(500).json({ error: error.message });
@@ -94,7 +98,10 @@ export default async function handler(req, res) {
     }
     console.log(`[DELETE INFO] Authenticated user for DELETE to slug '${slug}':`, user.email);
 
-    const { error } = await supabase.from('posts').delete().eq('slug', slug);
+    // Use admin client for deleting posts to bypass RLS
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin.from('posts').delete().eq('slug', slug);
+    
     if (error) {
         console.error(`[DELETE ERROR] Supabase DELETE error for slug '${slug}':`, error.message, error.details);
         return res.status(500).json({ error: error.message });

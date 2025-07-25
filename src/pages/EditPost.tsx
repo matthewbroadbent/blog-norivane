@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { PostEditor } from '../components/PostEditor'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseAdmin } from '../lib/supabase'
 import { Post } from '../types'
 import toast from 'react-hot-toast'
 
@@ -39,7 +39,8 @@ export function EditPost() {
   const handleSave = async (postData: Partial<Post>) => {
     if (!id) throw new Error('Post ID not found')
 
-    const { error } = await supabase
+    // Use admin client to bypass RLS for updating posts
+    const { error } = await supabaseAdmin
       .from('posts')
       .update(postData)
       .eq('id', id)

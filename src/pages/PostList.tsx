@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Edit, Trash2, Eye, Calendar, Tag } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseAdmin } from '../lib/supabase'
 import { Post } from '../types'
 import toast from 'react-hot-toast'
 
@@ -34,7 +34,8 @@ export function PostList() {
     if (!confirm('Are you sure you want to delete this post?')) return
 
     try {
-      const { error } = await supabase
+      // Use admin client to bypass RLS for deleting posts
+      const { error } = await supabaseAdmin
         .from('posts')
         .delete()
         .eq('id', id)

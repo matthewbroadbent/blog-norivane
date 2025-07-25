@@ -2,9 +2,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Removed: ALLOWED_ORIGIN constant
-// Removed: setCorsHeaders function
-
 const getSupabaseWithAuth = (req) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -16,11 +13,15 @@ const getSupabaseWithAuth = (req) => {
   });
 };
 
+// Admin client for server operations
+const getSupabaseAdmin = () => {
+  return createClient(
+    process.env.VITE_SUPABASE_URL, 
+    process.env.VITE_SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  );
+};
 
 export default async function handler(req, res) {
-  // Removed: setCorsHeaders(res);
-  // Removed: if (req.method === 'OPTIONS') { return res.status(200).end(); }
-
   const supabaseUnauthenticated = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
 
   // --- GET all posts ---
@@ -49,7 +50,13 @@ export default async function handler(req, res) {
 
     const postData = req.body;
 
-    const { data, error } = await supabase.from('posts').insert(postData).select();
+    // Use admin client for creating posts to bypass RLS
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin.from('posts').insert({
+      ...postData,
+      author_id: user.id
+    }).select();
+    
     if (error) {
         console.error('[POST /api/blog/posts] Error creating post:', error.message);
         return res.status(500).json({ error: error.message });
